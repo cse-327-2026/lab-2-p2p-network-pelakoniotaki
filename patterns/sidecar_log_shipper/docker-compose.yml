@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    volumes: [logs:/var/log/app]
+    ports: ["8080:8080"]
+  shipper:
+    image: alpine:3.20
+    volumes: [logs:/var/log/app]
+    command: ["sh", "-c", "tail -n +1 -F /var/log/app/access.log"]
+    depends_on: [app]
+volumes: { logs: {} }

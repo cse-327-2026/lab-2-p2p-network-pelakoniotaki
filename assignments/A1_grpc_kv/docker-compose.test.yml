@@ -1,0 +1,16 @@
+services:
+  kv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"
+  tester:
+    build:
+      context: tests
+      dockerfile: Dockerfile
+    environment:
+      KV_HOST: kv
+      KV_PORT: "50051"
+    depends_on:
+      - kv

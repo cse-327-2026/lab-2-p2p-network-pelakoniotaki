@@ -1,0 +1,7 @@
+FROM python:3.11.14-slim-bookworm
+
+WORKDIR /app
+
+COPY . /app
+
+CMD ["python", "main.py", "--id", "seed-node", "--port", "9001", "--seed-host", "seed-node", "--seed-port", "9001", "--host", "0.0.0.0"]

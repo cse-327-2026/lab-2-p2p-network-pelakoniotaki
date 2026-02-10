@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  seed:
+    build: .
+    command: >
+      python main.py
+      --port 9001
+      --bind-host 0.0.0.0
+      --docker-auto-ip
+      --is-seed
+
+  peer:
+    build: .
+    depends_on:
+      - seed
+    command: >
+      python main.py
+      --port 9000
+      --seed-host seed
+      --seed-port 9001
+      --bind-host 0.0.0.0
+      --docker-auto-ip
+  
+  viz:
+    build:
+      context: .
+      dockerfile: viz/Dockerfile
+    depends_on:
+      - seed
+    environment:
+      SEED_HOST: seed
+      SEED_PORT: "9001"
+      REFRESH_SECONDS: "1.5"
+      MAX_NODES: "80"
+      TIMEOUT: "1.0"
+    ports:
+      - "8080:8080"

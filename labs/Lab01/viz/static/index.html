@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>P2P Topology Visualizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- vis-network from CDN -->
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+  <style>
+    body { margin:0; font-family: system-ui, Arial; }
+    header { padding: 10px 14px; border-bottom: 1px solid #ddd; display:flex; gap:12px; align-items:center; }
+    #status { opacity: 0.75; }
+    #mynetwork { width: 100vw; height: calc(100vh - 52px); }
+    button { padding: 6px 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>P2P Topology</strong>
+    <span id="status">loading…</span>
+    <button onclick="network.setOptions({physics:false}); fetchAndRender()">Refresh</button>
+    <button onclick="network.setOptions({physics:true}); fetchAndRender();">        
+        Re-layout
+    </button>
+    <button onclick="toggleKnown()">Toggle Known Neighbors</button>
+  </header>
+  <div id="mynetwork"></div>
+
+  <script>
+    
+    const el = document.getElementById("mynetwork");
+    const statusEl = document.getElementById("status");
+
+    let showKnown = true;
+    let lastTopology = null;
+
+    function toggleKnown() {
+        showKnown = !showKnown;
+        if (lastTopology) renderGraph(lastTopology);
+    }
+
+
+
+
+    let network = null;
+
+    function renderGraph(data) {
+      lastTopology = data;
+
+    const nodes = new vis.DataSet(data.nodes || []);
+
+    lastTopology = data;
+
+
+    const filteredEdges = (data.edges || []).filter(e =>
+        showKnown || e.type !== "known"
+    ).map(e => {
+        if (e.type === "known") {
+            return { ...e, dashes: true, color: "#aaa" };
+        }
+        return { ...e, color: "green" };
+    });
+
+
+
+
+    const edges = new vis.DataSet(filteredEdges);
+
+      
+
+      const options = {
+        physics: {
+            enabled: true,
+
+            // More spacing
+            barnesHut: {
+            gravitationalConstant: -12000,
+            springLength: 220,
+            springConstant: 0.04
+            },
+
+            stabilization: {
+            enabled: true,
+            iterations: 200
+            }
+        },
+
+        interaction: { hover: true }
+        };
+
+
+      if (!network) {
+        network = new vis.Network(el, { nodes, edges }, options);
+        network.once("stabilized", function () {
+        network.setOptions({ physics: false });
+    });
+      } else {
+        network.setData({ nodes, edges });
+      }
+
+      const ts = data.updated_at ? new Date(data.updated_at * 1000).toLocaleTimeString() : "?";
+      statusEl.textContent = `nodes=${(data.nodes||[]).length} edges=${(data.edges||[]).length} updated=${ts}`;
+    }
+
+    async function fetchAndRender() {
+      try {
+        const r = await fetch("/api/topology");
+        const data = await r.json();
+        renderGraph(data);
+      } catch (e) {
+        statusEl.textContent = "error fetching topology";
+      }
+    }
+
+    // Poll live
+    fetchAndRender();
+    // setInterval(fetchAndRender, 1500);
+  </script>
+</body>
+</html>

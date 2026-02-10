@@ -1,0 +1,13 @@
+image: docker:27
+services: [docker:27-dind]
+variables:
+  DOCKER_TLS_CERTDIR: ""
+stages: [test]
+before_script:
+  - apk add --no-cache python3 py3-pip py3-virtualenv make bash rsync
+test:
+  stage: test
+  script:
+    - make deps
+    - make test
+    - make itest
